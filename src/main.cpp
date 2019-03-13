@@ -21,8 +21,8 @@ void flushSerialBuffer(void)
   {
     char1 = dev.getc();
   }
-  int i = 1;
-  
+  int i = 2;
+
   return;
 }
 
