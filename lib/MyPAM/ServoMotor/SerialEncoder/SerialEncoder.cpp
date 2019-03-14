@@ -30,9 +30,9 @@ serialSensorData SerialEncoder::getSensorData()
 
         //Load buffer data into variables
         //This could be improved upon but it works well
-        data.encoderCounts[0] = (((unsigned long)encoderSerialBuffer[3] << 24) | ((unsigned long)encoderSerialBuffer[2] << 16) | ((unsigned long)encoderSerialBuffer[1] << 8) | ((unsigned long)encoderSerialBuffer[0]));
+        data.encoderCounts[0] = 0 - (((unsigned long)encoderSerialBuffer[3] << 24) | ((unsigned long)encoderSerialBuffer[2] << 16) | ((unsigned long)encoderSerialBuffer[1] << 8) | ((unsigned long)encoderSerialBuffer[0]));
         data.encoderCounts[1] = (((unsigned long)encoderSerialBuffer[7] << 24) | ((unsigned long)encoderSerialBuffer[6] << 16) | ((unsigned long)encoderSerialBuffer[5] << 8) | ((unsigned long)encoderSerialBuffer[4]));
-        data.encoderCountRate[0] = (((unsigned long)encoderSerialBuffer[11] << 24) | ((unsigned long)encoderSerialBuffer[10] << 16) | ((unsigned long)encoderSerialBuffer[9] << 8) | ((unsigned long)encoderSerialBuffer[8]));
+        data.encoderCountRate[0] = 0 - (((unsigned long)encoderSerialBuffer[11] << 24) | ((unsigned long)encoderSerialBuffer[10] << 16) | ((unsigned long)encoderSerialBuffer[9] << 8) | ((unsigned long)encoderSerialBuffer[8]));
         data.encoderCountRate[1] = (((unsigned long)encoderSerialBuffer[15] << 24) | ((unsigned long)encoderSerialBuffer[14] << 16) | ((unsigned long)encoderSerialBuffer[13] << 8) | ((unsigned long)encoderSerialBuffer[12]));
 
         return data;

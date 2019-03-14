@@ -37,6 +37,6 @@ void ServoMotor::update()
 
     float pulsePerRadian = (((float)_properties.CountsPerRevolution * 4.0f) * _properties.gearRatio) / 6.28318;
 
-    _angle = ((float)tempData.encoderCounts[_jointID] / pulsePerRadian) + _properties.offset;
+    _angle = ((float)tempData.encoderCounts[_jointID] / pulsePerRadian) - _properties.offset;
     _angleV = ((float)tempData.encoderCountRate[_jointID] / pulsePerRadian);
 }
