@@ -47,6 +47,9 @@ public:
   bool reset();
 
 private:
+  /**
+       * Empties the serial buffer
+       */
   void flushSerialBuffer();
 
   Serial _encoderSerial;

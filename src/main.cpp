@@ -14,8 +14,9 @@ USBSerial pc;
 
 void testPrint()
 {
-  Matrix tempMatrix = OranPAM.getPositionVector();
-  pc.printf("%f,%f,\n", tempMatrix.getNumber(1, 1), tempMatrix.getNumber(2, 1));
+  Matrix posM = OranPAM.getPositionVector();
+  Matrix velM = OranPAM.getVelocityVector();
+  pc.printf("%f,%f,%f,%f,\n", posM.getNumber(1, 1), posM.getNumber(2, 1), velM.getNumber(1, 1), velM.getNumber(2, 1));
 
   //pc.printf("%f,%f,%f,%f,\n",OranPAM._servo0.get_angle()*57,OranPAM._servo1.get_angle()*57,OranPAM._servo0.get_angleV(),OranPAM._servo1.get_angleV());
 }
@@ -29,7 +30,7 @@ HID_REPORT recv_report;
 void HIDTest(Matrix vector)
 {
   send_report.length = 8;
-  
+
   int x = (int)tempMatrix.getNumber(1, 1);
   int y = -(int)tempMatrix.getNumber(2, 1);
 
