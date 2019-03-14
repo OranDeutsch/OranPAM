@@ -1,12 +1,14 @@
 #include "mbed.h"
-#include "SerialEncoder.h"
+#include "MyPAM.h"
 #include "USBSerial.h"
 #include "buzzer.h"
 
 USBSerial pc;
 DigitalOut led(PTB21);
 Beep buzzer(PTB18);
-SerialEncoder serialEncoder(PTC17,PTC16);
+
+MyPAM OranPAM; 
+
 
 int main()
 {
@@ -14,16 +16,15 @@ int main()
 
   buzzer.beep(1700, 1);
 
-  serialEncoder.reset();
-
   while (1)
   {
     Timer t;
     t.start();
 
-    serialSensorData tempData = serialEncoder.getSensorData();
+    OranPAM.update();
 
-    pc.printf("%i,%i,%i,%i, \n", tempData.encoderCounts[0], tempData.encoderCounts[1], tempData.encoderCountRate[0], tempData.encoderCountRate[1]);
+    pc.printf("%f,%f,%f,%f,\n",OranPAM.servo0.get_angle(),OranPAM.servo1.get_angle(),OranPAM.servo0.get_angleV(),OranPAM.servo1.get_angleV());
+
 
     while (t.read_ms() < 16);
   }
