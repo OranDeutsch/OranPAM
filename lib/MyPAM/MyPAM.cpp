@@ -1,6 +1,9 @@
 #include "MyPAM.h"
 
-MyPAM::MyPAM() : _serialEncoder(PTC17, PTC16), _servo0(0, &_serialEncoder), _servo1(1, &_serialEncoder), _setPoint(2, 1)
+MyPAM::MyPAM() : _serialEncoder(PTC17, PTC16),
+                 _servo0(0, &_serialEncoder,PTC11,PTC12,PTC9,PTB2),
+                 _servo1(1, &_serialEncoder,PTD5,PTD6,PTD3,PTB3),
+                 _setPoint(2, 1)
 {
     //Tempoary until EEPROm saving is implemented
     _properties = loadDefaultProperties();
@@ -81,11 +84,9 @@ void MyPAM::set_position(int x, int y)
               << y;
 
     Matrix angles = get_inverseKinematicPosition(_setPoint);
-    
+
     _servo0.set_angleSetpoint(angles.getNumber(1, 1));
     _servo1.set_angleSetpoint(angles.getNumber(2, 1));
-
-    
 }
 
 Matrix MyPAM::get_inverseKinematicPosition(Matrix position)
@@ -133,7 +134,7 @@ MyPAMProperties MyPAM::loadDefaultProperties()
     tempProperties.servo1Properties.offset = 0;
 
     //Provisionial PID values
-    tempProperties.servo0Properties.p = 1;
+    tempProperties.servo0Properties.p = 4;
     tempProperties.servo0Properties.i = 0;
     tempProperties.servo0Properties.d = 0;
     tempProperties.servo0Properties.PIDinterval = 1 / 60;
@@ -141,7 +142,7 @@ MyPAMProperties MyPAM::loadDefaultProperties()
     tempProperties.servo0Properties.maxAngle = -PI;
     tempProperties.servo0Properties.maxDutyCycle = 0.4;
 
-    tempProperties.servo1Properties.p = 1;
+    tempProperties.servo1Properties.p = 4;
     tempProperties.servo1Properties.i = 0;
     tempProperties.servo1Properties.d = 0;
     tempProperties.servo1Properties.PIDinterval = 1 / 60;

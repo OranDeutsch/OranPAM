@@ -1,7 +1,7 @@
 
 /////USB FUNCTION SWITCH, HIDTEST FOR NORMAL USE AND SERIAL FOR DEBUGGING///
 /////ONLY USE HIDTEST OR SERIAL IN THIS SPACE////
-#define HIDTEST
+#define SERIAL
 /////NEVER HAVE HID AND SERIAL ENABLED/////
 //***************************************//
 
@@ -11,6 +11,7 @@
 #include "mbed.h"
 #include "MyPAM.h"
 #include "buzzer.h"
+#include "Hbridge.h"
 
 #ifdef SERIAL
 #include "USBSerial.h"
@@ -24,16 +25,22 @@ DigitalOut led(PTB21);
 Beep buzzer(PTB18);
 MyPAM OranPAM;
 
+HBridge hbridge(PTD5, PTD6, PTD3, PTB3);
+
+SerialEncoder _serialEncoder(PTC17, PTC16);
+ServoMotor servo1(1, &_serialEncoder, PTD5, PTD6, PTD3, PTB3);
+
 #ifdef SERIAL
 USBSerial pc;
 
 void testPrint()
 {
-  Matrix posM = OranPAM.getPositionVector();
-  Matrix velM = OranPAM.getVelocityVector();
-  pc.printf("%f,%f,%f,%f,\n", posM.getNumber(1, 1), posM.getNumber(2, 1), velM.getNumber(1, 1), velM.getNumber(2, 1));
+  //Matrix posM = OranPAM.getPositionVector();
+  //Matrix velM = OranPAM.getVelocityVector();
+  //pc.printf("%f,%f,%f,%f,\n", posM.getNumber(1, 1), posM.getNumber(2, 1), velM.getNumber(1, 1), velM.getNumber(2, 1));
 
-  //pc.printf("%f,%f,%f,%f,\n",OranPAM._servo0.get_angle()*57,OranPAM._servo1.get_angle()*57,OranPAM._servo0.get_angleV(),OranPAM._servo1.get_angleV());
+  pc.printf("%f,%f,%f \n",(OranPAM._servo1.get_angle()*57),OranPAM._servo0._angleSetpoint,OranPAM._servo1._dutyCycle);
+  //pc.printf("%f, %f,%f \n", servo1.get_angle(), servo1._dutyCycle, servo1._angleSetpoint);
 }
 
 #endif
@@ -50,30 +57,30 @@ void HIDTest()
 
   if (hid.readNB(&recv_report))
   {
-   
 
     short testX = ((unsigned short)(recv_report.data[0]) + (unsigned short)(recv_report.data[1] << 8));
     short testY = ((unsigned short)(recv_report.data[2]) + (unsigned short)(recv_report.data[3] << 8));
 
     //SETTING UNREACHABLE LOCATIONS WILL CAUSE A CRASH
-    OranPAM.set_position((int)testX,(int)testY);
+    OranPAM.set_position((int)testX, (int)testY);
 
-
-     led = !led;
-
+    led = !led;
   }
 
   Matrix Positionvector = OranPAM.getCurrentPositionVector();
   Matrix setpointVector = OranPAM.get_inverseKinematicPosition(OranPAM.getSetPointPositionVector());
-  
-  
+
   send_report.length = 8;
 
   short x = (short)Positionvector.getNumber(1, 1);
-  short y = (short)Positionvector.getNumber(2, 1);
+  //short y = (short)Positionvector.getNumber(2, 1);
 
-  short sx = (short)(setpointVector.getNumber(1,1) * 57);
-  short sy = (short)(setpointVector.getNumber(2,1) * 57);
+  short y = (short)OranPAM._servo1.get_angle() * 57;
+
+
+  //short sx = (short)(setpointVector.getNumber(1, 1) * 57);
+  short sx = (short)(setpointVector.getNumber(2, 1) * 57);
+  short sy = (short)(OranPAM._servo1._dutyCycle * 100);
 
   //Create report
   send_report.data[0] = x & 0xFF;
@@ -88,7 +95,7 @@ void HIDTest()
   send_report.data[6] = sy & 0xFF;
   send_report.data[7] = (sy >> 8) & 0xFF;
 
-   //Send the report
+  //Send the report
   hid.sendNB(&send_report);
 }
 #endif
@@ -99,13 +106,14 @@ int main()
 
   buzzer.beep(1700, 1);
 
+  OranPAM.set_position(-100,-400);
+
   while (1)
   {
     Timer t;
     t.start();
 
     OranPAM.update();
-    
 
 #ifdef SERIAL
     testPrint();

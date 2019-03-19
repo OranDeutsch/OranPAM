@@ -1,13 +1,18 @@
 #include "ServoMotor.h"
 
-ServoMotor::ServoMotor(int jointID,SerialEncoder* serialEncoder): _serialEncoder(serialEncoder), _anglePID(1,0,0,(1/60))
+ServoMotor::ServoMotor(int jointID, SerialEncoder *serialEncoder, PinName pwm, PinName dir, PinName slp, PinName cs) : _serialEncoder(serialEncoder),
+                                                                                                                       _anglePID(5, 0, 0, 0.016),
+                                                                                                                       _hbridge(pwm, dir, slp, cs)
+
 {
     _jointID = jointID;
+    _hbridge.enabled(true);
+
+
 }
 
 ServoMotor::~ServoMotor()
 {
-
 }
 
 void ServoMotor::setProperties(ServoMotorProperties newProperties)
@@ -15,12 +20,12 @@ void ServoMotor::setProperties(ServoMotorProperties newProperties)
     _properties = newProperties;
 
     _anglePID.reset();
-    _anglePID.setTunings(_properties.p,_properties.i,_properties.d);
+    _anglePID.setMode(1);
+    _anglePID.setTunings(_properties.p, _properties.i, _properties.d);
     _anglePID.setInterval(_properties.PIDinterval);
-    _anglePID.setInputLimits(_properties.minAngle,_properties.maxAngle);
-    _anglePID.setOutputLimits(-_properties.maxDutyCycle,_properties.maxDutyCycle);
-    _anglePID.reset();
-
+    _anglePID.setBias(0);
+    _anglePID.setInputLimits(-3.14, 3.14);
+    _anglePID.setOutputLimits(-0.4, 0.4);
 }
 
 float ServoMotor::get_angle()
@@ -31,6 +36,8 @@ float ServoMotor::get_angle()
 void ServoMotor::set_angleSetpoint(float angleSetpoint)
 {
     _angleSetpoint = angleSetpoint - _properties.offset;
+
+    _anglePID.setSetPoint(_angleSetpoint);
 }
 
 float ServoMotor::get_angleV()
@@ -40,19 +47,20 @@ float ServoMotor::get_angleV()
 
 void ServoMotor::update()
 {
-    serialSensorData tempData = _serialEncoder->getSensorData();    //Loads the sensor data
+    serialSensorData tempData = _serialEncoder->getSensorData(); //Loads the sensor data
 
     //Calculates the pulse per radian based on the encoder PPR and gear ratio used
     float pulsePerRadian = (((float)_properties.pulsesPerRevolution * 4.0f) * _properties.gearRatio) / 6.28318;
 
     //Calculates the angle and angle velocity in rads per second from the data
-    _angle      = ((float)tempData.encoderCounts[_jointID] / pulsePerRadian) - _properties.offset;
-    _angleV     = ((float)tempData.encoderCountRate[_jointID] / pulsePerRadian);
+    _angle = ((float)tempData.encoderCounts[_jointID] / pulsePerRadian) - _properties.offset;
+    _angleV = ((float)tempData.encoderCountRate[_jointID] / pulsePerRadian);
 
     //Apply values to PID loop
-    _anglePID.setSetPoint(_angleSetpoint);
     _anglePID.setProcessValue(_angle);
 
-    //
-    float dutyCycle = _anglePID.compute();
+    //get dutycycle from pid loop
+    _dutyCycle = _anglePID.compute();
+
+    _hbridge.set_hbridge_duty(0 - _dutyCycle);
 }
