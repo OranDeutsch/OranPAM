@@ -10,6 +10,7 @@
 /**
  * Defines
  */
+#define PI 3.141592f
 
 struct MyPAMProperties
 {
@@ -41,11 +42,24 @@ class MyPAM
        */
     void update();
 
-  /**
+    /**
        * Returns the position of the end effector
        * @return Matrix : Vector the the current end effector position
        */
-    Matrix getPositionVector();
+    Matrix getCurrentPositionVector();
+
+    /**
+       * Returns the current position setpoint
+       * @return Matrix : Vector the current end effector setpoint
+       */
+    Matrix getSetPointPositionVector();
+
+    /**
+       * Computes the required motor angles to achieve a set of end effctor coordinates
+       * @param Position : X,Y vector of desired end effector position
+       * @return Vector of motor angles
+       */
+    Matrix get_inverseKinematicPosition(Matrix position);
 
     /**
        * Returns the velocity of the end effector
@@ -53,18 +67,31 @@ class MyPAM
        */
     Matrix getVelocityVector();
 
+    void set_position(int x,int y);
+
     SerialEncoder _serialEncoder;
     ServoMotor _servo0;
     ServoMotor _servo1;
 
+    Matrix _setPoint;
+
   private:
-      /**
+  /**
+       * Forces the MyPAM to use hard saved properties
+       */
+    MyPAMProperties loadDefaultProperties();
+
+    /**
        * Returns jacobian of the end effector 
        * @return Matrix : Vector the the current end effector position
        */
-    Matrix getJacobian();
+    Matrix get_Jacobian();
+
+   
 
     MyPAMProperties _properties;
+
+    
 };
 
 #endif
