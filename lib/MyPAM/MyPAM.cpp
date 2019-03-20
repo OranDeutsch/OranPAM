@@ -134,21 +134,21 @@ MyPAMProperties MyPAM::loadDefaultProperties()
     tempProperties.servo1Properties.offset = 0;
 
     //Provisionial PID values
-    tempProperties.servo0Properties.p = 4;
+    tempProperties.servo0Properties.p = 8;
     tempProperties.servo0Properties.i = 0;
     tempProperties.servo0Properties.d = 0;
     tempProperties.servo0Properties.PIDinterval = 1 / 60;
-    tempProperties.servo0Properties.maxAngle = PI;
-    tempProperties.servo0Properties.maxAngle = -PI;
-    tempProperties.servo0Properties.maxDutyCycle = 0.4;
+    tempProperties.servo0Properties.minAngle = -3.14;
+    tempProperties.servo0Properties.maxAngle = -0;
+    tempProperties.servo0Properties.maxDutyCycle = 0.3;
 
-    tempProperties.servo1Properties.p = 4;
+    tempProperties.servo1Properties.p = 12;
     tempProperties.servo1Properties.i = 0;
     tempProperties.servo1Properties.d = 0;
     tempProperties.servo1Properties.PIDinterval = 1 / 60;
-    tempProperties.servo1Properties.maxAngle = PI;
-    tempProperties.servo1Properties.maxAngle = -PI;
-    tempProperties.servo1Properties.maxDutyCycle = 0.4;
+    tempProperties.servo1Properties.minAngle = -3.14;
+    tempProperties.servo1Properties.maxAngle = 3.14;
+    tempProperties.servo1Properties.maxDutyCycle = 0.2;
 
     return tempProperties;
 }

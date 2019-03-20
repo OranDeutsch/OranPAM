@@ -24,8 +24,8 @@ void ServoMotor::setProperties(ServoMotorProperties newProperties)
     _anglePID.setTunings(_properties.p, _properties.i, _properties.d);
     _anglePID.setInterval(_properties.PIDinterval);
     _anglePID.setBias(0);
-    _anglePID.setInputLimits(-3.14, 3.14);
-    _anglePID.setOutputLimits(-0.4, 0.4);
+    _anglePID.setInputLimits(_properties.minAngle, _properties.maxAngle);
+    _anglePID.setOutputLimits((0 - _properties.maxDutyCycle), _properties.maxDutyCycle);
 }
 
 float ServoMotor::get_angle()
@@ -35,7 +35,7 @@ float ServoMotor::get_angle()
 
 void ServoMotor::set_angleSetpoint(float angleSetpoint)
 {
-    _angleSetpoint = angleSetpoint - _properties.offset;
+    _angleSetpoint = angleSetpoint;
 
     _anglePID.setSetPoint(_angleSetpoint);
 }
@@ -62,5 +62,5 @@ void ServoMotor::update()
     //get dutycycle from pid loop
     _dutyCycle = _anglePID.compute();
 
-    _hbridge.set_hbridge_duty(0 - _dutyCycle);
+    _hbridge.set_hbridge_duty(_dutyCycle);
 }

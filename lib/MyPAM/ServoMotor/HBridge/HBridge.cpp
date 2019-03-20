@@ -29,7 +29,7 @@ float HBridge::get_current()
 {
 
     float vin = _cs * 3.3f; //find the input voltage on the current sense pin
-    _current = (vin * 0.04); // The output voltage is about 40 mV/A plus a small offset, which is typically about 50 mV.
+    _current = (vin - (3.3/2)) / 0.4;
     return _current;
     
 }

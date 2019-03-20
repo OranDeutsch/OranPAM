@@ -83,9 +83,11 @@ class ServoMotor
        */
     PID _anglePID;
 
+    HBridge _hbridge;
+
   private:
 
-    HBridge _hbridge;
+    
     
     /**
        * ID of the joint (0 or 1)

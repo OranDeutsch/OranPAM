@@ -22,25 +22,26 @@
 #endif
 
 DigitalOut led(PTB21);
+DigitalOut relay(PTC15);
+
 Beep buzzer(PTB18);
 MyPAM OranPAM;
 
-HBridge hbridge(PTD5, PTD6, PTD3, PTB3);
 
-SerialEncoder _serialEncoder(PTC17, PTC16);
-ServoMotor servo1(1, &_serialEncoder, PTD5, PTD6, PTD3, PTB3);
 
 #ifdef SERIAL
 USBSerial pc;
 
 void testPrint()
 {
-  //Matrix posM = OranPAM.getPositionVector();
-  //Matrix velM = OranPAM.getVelocityVector();
+  Matrix posM = OranPAM.getCurrentPositionVector();
+  Matrix velM = OranPAM.getVelocityVector();
   //pc.printf("%f,%f,%f,%f,\n", posM.getNumber(1, 1), posM.getNumber(2, 1), velM.getNumber(1, 1), velM.getNumber(2, 1));
-
-  pc.printf("%f,%f,%f \n",(OranPAM._servo1.get_angle()*57),OranPAM._servo0._angleSetpoint,OranPAM._servo1._dutyCycle);
+  //pc.printf("%f , %f \n",OranPAM._servo0.get_angle() * 57,OranPAM._servo1.get_angle() * 57);
+  //pc.printf("%f,%f,%f \n",(OranPAM._servo1.get_angle()),OranPAM._servo1._angleSetpoint,OranPAM._servo1._dutyCycle);
   //pc.printf("%f, %f,%f \n", servo1.get_angle(), servo1._dutyCycle, servo1._angleSetpoint);
+
+  pc.printf("%f,%f, \n",OranPAM._servo0._hbridge.get_current(),OranPAM._servo1._hbridge.get_current());
 }
 
 #endif
@@ -68,19 +69,15 @@ void HIDTest()
   }
 
   Matrix Positionvector = OranPAM.getCurrentPositionVector();
-  Matrix setpointVector = OranPAM.get_inverseKinematicPosition(OranPAM.getSetPointPositionVector());
+  Matrix setpointVector = OranPAM.getSetPointPositionVector();
 
   send_report.length = 8;
 
   short x = (short)Positionvector.getNumber(1, 1);
-  //short y = (short)Positionvector.getNumber(2, 1);
+  short y = (short)Positionvector.getNumber(2, 1);
 
-  short y = (short)OranPAM._servo1.get_angle() * 57;
-
-
-  //short sx = (short)(setpointVector.getNumber(1, 1) * 57);
-  short sx = (short)(setpointVector.getNumber(2, 1) * 57);
-  short sy = (short)(OranPAM._servo1._dutyCycle * 100);
+  short sx = (short)(setpointVector.getNumber(1, 1));
+  short sy = (short)(setpointVector.getNumber(2, 1));
 
   //Create report
   send_report.data[0] = x & 0xFF;
@@ -103,8 +100,10 @@ void HIDTest()
 int main()
 {
   led = 1;
+  relay = 1;
 
   buzzer.beep(1700, 1);
+
 
   OranPAM.set_position(-100,-400);
 
