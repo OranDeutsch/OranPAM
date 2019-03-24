@@ -1,7 +1,7 @@
 
 /////USB FUNCTION SWITCH, HIDTEST FOR NORMAL USE AND SERIAL FOR DEBUGGING///
 /////ONLY USE HIDTEST OR SERIAL IN THIS SPACE////
-#define SERIAL
+#define HID
 /////NEVER HAVE HID AND SERIAL ENABLED/////
 //***************************************//
 
@@ -11,7 +11,6 @@
 #include "mbed.h"
 #include "MyPAM.h"
 #include "buzzer.h"
-#include "Hbridge.h"
 
 #ifdef SERIAL
 #include "USBSerial.h"
@@ -46,57 +45,6 @@ void testPrint()
 
 #endif
 
-#ifdef HIDTEST
-
-USBHID hid(8, 8);
-HID_REPORT send_report;
-HID_REPORT recv_report;
-
-//Provisionial HID update method
-void HIDTest()
-{
-
-  if (hid.readNB(&recv_report))
-  {
-
-    short testX = ((unsigned short)(recv_report.data[0]) + (unsigned short)(recv_report.data[1] << 8));
-    short testY = ((unsigned short)(recv_report.data[2]) + (unsigned short)(recv_report.data[3] << 8));
-
-    //SETTING UNREACHABLE LOCATIONS WILL CAUSE A CRASH
-    OranPAM.set_position((int)testX, (int)testY);
-
-    led = !led;
-  }
-
-  Matrix Positionvector = OranPAM.getCurrentPositionVector();
-  Matrix setpointVector = OranPAM.getSetPointPositionVector();
-
-  send_report.length = 8;
-
-  short x = (short)Positionvector.getNumber(1, 1);
-  short y = (short)Positionvector.getNumber(2, 1);
-
-  short sx = (short)(setpointVector.getNumber(1, 1));
-  short sy = (short)(setpointVector.getNumber(2, 1));
-
-  //Create report
-  send_report.data[0] = x & 0xFF;
-  send_report.data[1] = (x >> 8) & 0xFF;
-
-  send_report.data[2] = y & 0xFF;
-  send_report.data[3] = (y >> 8) & 0xFF;
-
-  send_report.data[4] = sx & 0xFF;
-  send_report.data[5] = (sx >> 8) & 0xFF;
-
-  send_report.data[6] = sy & 0xFF;
-  send_report.data[7] = (sy >> 8) & 0xFF;
-
-  //Send the report
-  hid.sendNB(&send_report);
-}
-#endif
-
 int main()
 {
   led = 1;
@@ -118,16 +66,9 @@ int main()
     testPrint();
 #endif
 
-#ifdef HIDTEST
-    HIDTest();
-#endif
+    //play emergancy sound if update takes longer than 16ms
+    if (t.read_ms() > 16) buzzer.beep(1700, 1);
 
-    if (t.read_ms() > 16)
-    {
-      buzzer.beep(1700, 1);
-    }
-
-    while (t.read_ms() < 16)
-      ;
+    while (t.read_ms() < 16);
   }
 }

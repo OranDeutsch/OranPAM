@@ -6,7 +6,7 @@ HBridge::HBridge(PinName pwm, PinName dir, PinName slp, PinName cs) : _pwm(pwm),
     _pwm.period(PWM_PERIOD);
 
     _dir = 1; //Default direction is forwards
-    _slp = 1; //Disabled by default
+    _slp = 1; //Enabled by default
 
 }
 
@@ -29,6 +29,7 @@ float HBridge::get_current()
 {
 
     float vin = _cs * 3.3f; //find the input voltage on the current sense pin
+
     _current = (vin - (3.3/2)) / 0.4;
     return _current;
     

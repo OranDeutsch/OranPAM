@@ -7,6 +7,8 @@
 #include "mbed.h"
 #include "ServoMotor.h"
 #include "Matrix.h"
+#include "USBHID.h"
+
 /**
  * Defines
  */
@@ -67,16 +69,22 @@ class MyPAM
        */
     Matrix getVelocityVector();
 
-    void set_position(int x,int y);
+    /**
+       * Sets the setpoint position coodintes of the end effector
+       * @param int X : x position of new position
+       * @param int Y : y position of new porsition
+       * @return True if successful, false if error is detected
+       */
+    bool set_position(int x, int y);
+
+    void set_motorPower(bool enable);
 
     SerialEncoder _serialEncoder;
     ServoMotor _servo0;
     ServoMotor _servo1;
 
-    Matrix _setPoint;
-
   private:
-  /**
+    /**
        * Forces the MyPAM to use hard saved properties
        */
     MyPAMProperties loadDefaultProperties();
@@ -87,11 +95,50 @@ class MyPAM
        */
     Matrix get_Jacobian();
 
-   
+    /**
+       * check a move to a new x,y position will not cause a crash
+       * @param int X : x position of new position
+       * @param int Y : y position of new porsition
+       * @return True possable, false if impossable
+       */
+    bool checkCoordinateInput(int x, int y);
 
+    /**
+       * sends the current system state over USB
+       */
+    void send_HID();
+
+    /**
+       * checks if a new HID command has been recieved
+       */
+    void recv_HID();
+
+    /**
+       * setpoint coodintes vector
+       */
+    Matrix _setPoint;
+
+    /**
+       * _USBHID device controller
+       */
+    USBHID _hid;
+
+    /**
+       * outgoing HID report
+       */
+    HID_REPORT _send_report;
+
+    /**
+       * incoming HID report
+       */
+    HID_REPORT _recv_report;
+
+    /**
+       * The current device properties
+       */
     MyPAMProperties _properties;
 
-    
+    bool _enabled;
 };
 
 #endif

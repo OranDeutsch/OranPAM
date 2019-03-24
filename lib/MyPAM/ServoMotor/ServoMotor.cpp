@@ -1,14 +1,17 @@
 #include "ServoMotor.h"
 
-ServoMotor::ServoMotor(int jointID, SerialEncoder *serialEncoder, PinName pwm, PinName dir, PinName slp, PinName cs) : _serialEncoder(serialEncoder),
-                                                                                                                       _anglePID(5, 0, 0, 0.016),
-                                                                                                                       _hbridge(pwm, dir, slp, cs)
+ServoMotor::ServoMotor(
+    int jointID,
+    SerialEncoder *serialEncoder,
+    PinName pwm, PinName dir, PinName slp, PinName cs)
+
+    : _serialEncoder(serialEncoder),
+      _anglePID(5, 0, 0, 0.016),
+      _hbridge(pwm, dir, slp, cs)
 
 {
     _jointID = jointID;
-    _hbridge.enabled(true);
-
-
+    _hbridge.enabled(false);
 }
 
 ServoMotor::~ServoMotor()
