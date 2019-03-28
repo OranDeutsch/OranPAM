@@ -5,6 +5,8 @@ HBridge::HBridge(PinName pwm, PinName dir, PinName slp, PinName cs) : _pwm(pwm),
 {
     _pwm.period(PWM_PERIOD);
 
+    _assistanceFactor = 100;
+
     _dir = 1; //Default direction is forwards
     _slp = 1; //Enabled by default
 
@@ -12,6 +14,7 @@ HBridge::HBridge(PinName pwm, PinName dir, PinName slp, PinName cs) : _pwm(pwm),
 
 void HBridge::set_hbridge_duty(float mag)
 {
+    mag = mag * (((float)_assistanceFactor) / 100);
 
     //Control mag and dir pins
     if (mag >= 0) _dir = 0;                  // Sets forward direction
@@ -39,4 +42,9 @@ void HBridge::enabled(bool enabled){
     
     _slp = enabled;
         
+}
+
+void HBridge::setAssistanceFactor(int f)
+{
+    _assistanceFactor = f;
 }

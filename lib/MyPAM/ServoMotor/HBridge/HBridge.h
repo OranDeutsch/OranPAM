@@ -45,6 +45,7 @@ public:
     
     void enabled(bool enabled);
 
+    void setAssistanceFactor(int f);
 private:
 
     PwmOut _pwm;
@@ -57,6 +58,7 @@ private:
     
     float _current;
     
+    int _assistanceFactor;
 };
 
 #endif

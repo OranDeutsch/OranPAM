@@ -16,14 +16,10 @@
 #include "USBSerial.h"
 #endif
 
-#ifdef HIDTEST
-#include "USBHID.h"
-#endif
-
 DigitalOut led(PTB21);
 DigitalOut relay(PTC15);
 
-Beep buzzer(PTB18);
+
 MyPAM OranPAM;
 
 
@@ -50,7 +46,6 @@ int main()
   led = 1;
   relay = 1;
 
-  buzzer.beep(1700, 1);
 
 
   OranPAM.set_position(-100,-400);
@@ -66,9 +61,8 @@ int main()
     testPrint();
 #endif
 
-    //play emergancy sound if update takes longer than 16ms
-    if (t.read_ms() > 16) buzzer.beep(1700, 1);
 
-    while (t.read_ms() < 16);
+
+    while (t.read_ms() < (OranPAM._properties.interval * 1000.0f));
   }
 }

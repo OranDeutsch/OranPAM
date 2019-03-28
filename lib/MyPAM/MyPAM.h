@@ -8,16 +8,20 @@
 #include "ServoMotor.h"
 #include "Matrix.h"
 #include "USBHID.h"
-
+#include "I2CEEBlockDevice.h"
+#include "buzzer.h"
 /**
  * Defines
  */
 #define PI 3.141592f
+#define BLOCK_SIZE 32
 
 struct MyPAMProperties
 {
     int l1;
     int l0;
+
+    float interval;
 
     ServoMotorProperties servo0Properties;
     ServoMotorProperties servo1Properties;
@@ -77,6 +81,11 @@ class MyPAM
        */
     bool set_position(int x, int y);
 
+        /**
+       * The current device properties
+       */
+    MyPAMProperties _properties;
+
     void set_motorPower(bool enable);
 
     SerialEncoder _serialEncoder;
@@ -113,6 +122,22 @@ class MyPAM
        */
     void recv_HID();
 
+    void getHIDSetPoint();
+
+    void getHIDMotorsEnabled();
+
+    void getHIDAssistanceFactor();
+
+    void sendGlobalProperties();
+
+    void sendServoProperties(int servoID);
+
+    void getGlobalProperties();
+
+    void getServoProperties(int servoID);
+
+    bool _hidSendENabled;
+
     /**
        * setpoint coodintes vector
        */
@@ -133,12 +158,27 @@ class MyPAM
        */
     HID_REPORT _recv_report;
 
-    /**
-       * The current device properties
-       */
-    MyPAMProperties _properties;
+
+
+    Beep _buzzer;
 
     bool _enabled;
+
+    int _assistanceFactor;
+
+    void saveProperties(MyPAMProperties properties);
+
+    MyPAMProperties loadProperties();
+
+    I2CEEBlockDevice _i2cEEPROM;
+
+    void floatToByteArray(uint8_t *report, float f, int start);
+
+    void shortToByteArray(uint8_t *report, short s, int start);
+
+    float ByteArrayToFloat(uint8_t *report, int start);
+
+    short ByteArrayToShort(uint8_t *report, int start);
 };
 
 #endif
