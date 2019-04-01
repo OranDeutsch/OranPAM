@@ -56,3 +56,8 @@ bool SerialEncoder::reset()
         return true;                            //Error handling is yet to be implementated
 
 }
+
+void SerialEncoder::calibrate()
+{
+         _encoderSerial.putc('c');
+}

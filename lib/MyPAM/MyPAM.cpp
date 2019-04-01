@@ -8,15 +8,17 @@ MyPAM::MyPAM() : _serialEncoder(PTC17, PTC16),
                  _i2cEEPROM(D14, D15, 0xa0, 32 * 1024),
                  _buzzer(PTB18)
 {
-    //Set send report length to maximum
+    //Sent send report length to maximum
     _send_report.length = 64;
 
     //Tempoary until EEPROm saving is implemented
     //_properties = loadDefaultProperties();
     //saveProperties(loadDefaultProperties());
 
+    //gets existing properties from EEPROM
     _properties = loadProperties();
 
+    //send properties to servos
     _servo0.setProperties(_properties.servo0Properties);
     _servo1.setProperties(_properties.servo1Properties);
 
@@ -40,14 +42,14 @@ MyPAM::~MyPAM()
 
 void MyPAM::update()
 {
-    recv_HID();
+    recv_HID(); //Check is a command has been recieved
 
-    set_motorPower(_enabled);
+    set_motorPower(_enabled); //disables motots immedatly if enabled is set false
 
-    _servo0.update();
+    _servo0.update(); //Update servo
     _servo1.update();
 
-    send_HID();
+    send_HID(); //send current status over HID
 }
 
 Matrix MyPAM::getCurrentPositionVector()
@@ -141,6 +143,7 @@ bool MyPAM::checkCoordinateInput(int x, int y)
 
 Matrix MyPAM::get_inverseKinematicPosition(Matrix position)
 {
+    //Basic trigometric inverse kinematics
     Matrix angles(2, 1);
 
     float x = position.getNumber(1, 1);
@@ -160,6 +163,7 @@ Matrix MyPAM::get_inverseKinematicPosition(Matrix position)
 
     theta1 = 0 - theta1;
 
+    //append calculated angles to matrix
     angles << theta0
            << theta1;
 
@@ -168,7 +172,7 @@ Matrix MyPAM::get_inverseKinematicPosition(Matrix position)
 
 void MyPAM::send_HID()
 {
-
+    //sets the fist but of the control byte depending on if the motors are enabled
     uint8_t controlByte = 0;
 
     if (_enabled)
@@ -233,40 +237,42 @@ void MyPAM::recv_HID()
     //currently only accepts setpoint values as bytes 0 to 3
     if (_hid.readNB(&_recv_report))
     {
-        if (_recv_report.data[0] != 0)  _buzzer.beep(1700, 0.1);
+        if (_recv_report.data[0] != 0)
+            _buzzer.beep(1700, 0.1);
 
         //check first byte for what command is being sent
         switch (_recv_report.data[0])
         {
         case 0:
-            getHIDMotorsEnabled();
+            getHIDMotorsEnabled(); //Executes "enable motors" command
             break;
         case 1:
-            getHIDSetPoint();
+            getHIDSetPoint(); //Executes "set set-point" command
             break;
         case 2:
-            getHIDAssistanceFactor();
+            getHIDAssistanceFactor(); //Executes "set force assistance factor" command
             break;
         case 3:
-            sendGlobalProperties();
+            sendGlobalProperties(); //send the global (non-servo) properties over HID
             break;
         case 4:
-            sendServoProperties(0);
+            sendServoProperties(0); //Send servo 0 properties over HID
             break;
         case 5:
-            sendServoProperties(1);
+            sendServoProperties(1); //Send servo 1 properties over HID
             break;
         case 6:
-            getGlobalProperties();
+            getGlobalProperties(); //Sets the global properties based on incoming HID report
             break;
         case 7:
-            getServoProperties(0);
+            getServoProperties(0); //Sets servo 0 properties based on incoming HID report
             break;
         case 8:
-            getServoProperties(1);
+            getServoProperties(1); //Sets servo 1 properties based on incoming HID report
             break;
         case 9:
         {
+            //Loads the default properties
             _properties = loadDefaultProperties();
 
             _servo0.setProperties(_properties.servo0Properties);
@@ -274,7 +280,11 @@ void MyPAM::recv_HID()
             break;
         }
         case 10:
-            saveProperties(_properties);
+            saveProperties(_properties); //Saves the current properties to EEPROM
+            break;
+
+        case 11:
+            calibratePotentiometers();
             break;
         }
     }
@@ -284,10 +294,10 @@ void MyPAM::getHIDSetPoint()
 {
     _hidSendENabled = true;
 
+    //Bitshifts the incoming report data into X and Y as 16 bit ints
     short testX = ((unsigned short)(_recv_report.data[4]) + (unsigned short)(_recv_report.data[5] << 8));
     short testY = ((unsigned short)(_recv_report.data[6]) + (unsigned short)(_recv_report.data[7] << 8));
 
-    //SETTING UNREACHABLE LOCATIONS WILL CAUSE A CRASH
     set_position((int)testX, (int)testY);
 }
 
@@ -332,10 +342,12 @@ void MyPAM::getServoProperties(int servoID)
     ///byte 26,27 = min angle (degrees)
     ///byte 28,31 = max duty cycle (decimal)
 
+    //Properties are loaded from current ones for values that are not user-editable
     ServoMotorProperties tempProperties = _properties.servo0Properties;
     if (servoID == 1)
         tempProperties = _properties.servo1Properties;
 
+    //append new properties to tempory ServoMotorProperties struct
     tempProperties.pulsesPerRevolution = ByteArrayToShort(_recv_report.data, 4);
     tempProperties.offset = (float)ByteArrayToShort(_recv_report.data, 6) / 57.296f;
     tempProperties.gearRatio = ByteArrayToFloat(_recv_report.data, 8);
@@ -346,6 +358,7 @@ void MyPAM::getServoProperties(int servoID)
     tempProperties.minAngle = (float)ByteArrayToShort(_recv_report.data, 26) / 57.296f;
     tempProperties.maxDutyCycle = ByteArrayToFloat(_recv_report.data, 28);
 
+    //Sets temperory properties to become the existing properties
     if (servoID == 0)
     {
         _properties.servo0Properties = tempProperties;
@@ -356,67 +369,6 @@ void MyPAM::getServoProperties(int servoID)
         _properties.servo1Properties = tempProperties;
         _servo1.setProperties(_properties.servo1Properties);
     }
-}
-
-void MyPAM::floatToByteArray(uint8_t *report, float f, int start)
-{
-
-    union {
-        float fval;
-        uint8_t bval[4];
-    } floatAsBytes;
-
-    floatAsBytes.fval = f;
-
-    for (int i = start; i < (start + 4); i++)
-    {
-        report[i] = floatAsBytes.bval[i - start];
-    }
-}
-
-void MyPAM::shortToByteArray(uint8_t *report, short s, int start)
-{
-    union {
-        short sval;
-        uint8_t bval[2];
-    } shortAsBytes;
-
-    shortAsBytes.sval = s;
-
-    for (int i = start; i < (start + 2); i++)
-    {
-        report[i] = shortAsBytes.bval[i - start];
-    }
-}
-
-float MyPAM::ByteArrayToFloat(uint8_t *report, int start)
-{
-    union {
-        float fval;
-        uint8_t bval[4];
-    } floatAsBytes;
-
-    for (int i = start; i < (start + 4); i++)
-    {
-        floatAsBytes.bval[i - start] = report[i];
-    }
-
-    return floatAsBytes.fval;
-}
-
-short MyPAM::ByteArrayToShort(uint8_t *report, int start)
-{
-    union {
-        short sval;
-        uint8_t bval[2];
-    } shortAsBytes;
-
-    for (int i = start; i < (start + 2); i++)
-    {
-        shortAsBytes.bval[i - start] = report[i];
-    }
-
-    return shortAsBytes.sval;
 }
 
 void MyPAM::sendGlobalProperties()
@@ -469,23 +421,28 @@ void MyPAM::set_motorPower(bool enable)
     _servo1._hbridge.enabled(enable);
 }
 
+void MyPAM::calibratePotentiometers()
+{
+    _serialEncoder.calibrate();
+}
+
 MyPAMProperties MyPAM::loadDefaultProperties()
 {
     MyPAMProperties tempProperties;
 
     //Provisionial link length values
-    tempProperties.l0 = 340;
-    tempProperties.l1 = 240;
+    tempProperties.l0 = 358;
+    tempProperties.l1 = 228;
     tempProperties.interval = 1.0f / 60.0f;
 
     //Provisionial motor values
     tempProperties.servo0Properties.pulsesPerRevolution = 1024;
-    tempProperties.servo0Properties.gearRatio = 29.5f;
-    tempProperties.servo0Properties.offset = 1.57079f;
+    tempProperties.servo0Properties.gearRatio = -40.0f;
+    tempProperties.servo0Properties.offset = 0.0f;
 
     tempProperties.servo1Properties.pulsesPerRevolution = 1024;
-    tempProperties.servo1Properties.gearRatio = 29.5f;
-    tempProperties.servo1Properties.offset = 0;
+    tempProperties.servo1Properties.gearRatio = 70.0f;
+    tempProperties.servo1Properties.offset = 0.0f;
 
     //Provisionial PID values
     tempProperties.servo0Properties.p = 12;
@@ -502,14 +459,14 @@ MyPAMProperties MyPAM::loadDefaultProperties()
     tempProperties.servo1Properties.PIDinterval = tempProperties.interval;
     tempProperties.servo1Properties.minAngle = -3.14;
     tempProperties.servo1Properties.maxAngle = 3.14;
-    tempProperties.servo1Properties.maxDutyCycle = 0.2;
+    tempProperties.servo1Properties.maxDutyCycle = 0.25;
 
     return tempProperties;
 }
 
 void MyPAM::saveProperties(MyPAMProperties properties)
 {
-    
+
     unsigned int setting_block_size = ceil(sizeof(MyPAMProperties) / (double)BLOCK_SIZE) * BLOCK_SIZE;
     char *buffer = (char *)malloc(setting_block_size);
 
@@ -519,14 +476,12 @@ void MyPAM::saveProperties(MyPAMProperties properties)
 
     wait_ms(6);
     //_buzzer.beep(1700, 0.02);
-
-
-
 }
 
 MyPAMProperties MyPAM::loadProperties()
 {
 
+    //need to implement outdated EEPROM detection, version number should be added or base on size of struct
 
     MyPAMProperties tempProperties;
 
@@ -542,7 +497,7 @@ MyPAMProperties MyPAM::loadProperties()
     else
     {
     }
-    
+
     if (sizeof(tempProperties) != sizeof(loadDefaultProperties()))
     {
         _buzzer.beep(1700, 1);

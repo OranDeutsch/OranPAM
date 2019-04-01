@@ -46,6 +46,11 @@ public:
        */
   bool reset();
 
+/**
+       * Starts calibration seqence
+       */
+  void calibrate();
+
 private:
   /**
        * Empties the serial buffer
